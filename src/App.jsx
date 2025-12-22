@@ -1,29 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { 
-  getFirestore, collection, addDoc, onSnapshot, 
-  serverTimestamp, doc, setDoc, getDoc, query, orderBy, limit 
-} from 'firebase/firestore';
-import { Heart, Trophy, Crown, ArrowRight, User, Star, Gem, Camera, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { initializeApp } from "firebase/app";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  serverTimestamp,
+  query,
+  orderBy,
+  limit,
+} from "firebase/firestore";
+import {
+  Heart,
+  Trophy,
+  Crown,
+  ArrowRight,
+  User,
+  Gem,
+  Camera,
+  Sparkles,
+} from "lucide-react";
+
+import FruitSliceGame from "./games/FruitSlice/FruitSliceGame";
 
 // --- CONFIGURATION ---
 const WHO_IS_LIKELY_QUESTIONS = [
   {
     question: "Who is more likely to cry during the ceremony?",
     options: ["Jessica", "Josh", "Both", "Neither"],
-    answer: "Josh"
+    answer: "Josh",
   },
   {
     question: "Who takes longer to get ready?",
     options: ["Jessica", "Josh"],
-    answer: "Jessica"
+    answer: "Jessica",
   },
   {
     question: "Who said 'I love you' first?",
     options: ["Jessica", "Josh"],
-    answer: "Josh"
-  }
+    answer: "Josh",
+  },
 ];
 
 // --- FIREBASE SETUP ---
@@ -33,7 +50,7 @@ const firebaseConfig = {
   projectId: "wedding-app-4ccf7",
   storageBucket: "wedding-app-4ccf7.firebasestorage.app",
   messagingSenderId: "800410129800",
-  appId: "1:800410129800:web:180baa7eae03e4daab163d"
+  appId: "1:800410129800:web:180baa7eae03e4daab163d",
 };
 
 // Initialize Firebase
@@ -41,7 +58,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- SUB-COMPONENTS (Defined OUTSIDE to fix focus bug) ---
+// --- SUB-COMPONENTS ---
 
 const IntroScreen = ({ playerName, setPlayerName, setGameState }) => (
   <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center space-y-8 bg-gradient-to-br from-pink-50 to-rose-100 animate-in fade-in duration-700">
@@ -49,7 +66,7 @@ const IntroScreen = ({ playerName, setPlayerName, setGameState }) => (
       <Heart className="w-24 h-24 text-rose-500 animate-pulse" fill="currentColor" />
       <Sparkles className="absolute -top-4 -right-4 w-8 h-8 text-yellow-400 animate-bounce" />
     </div>
-    
+
     <div className="space-y-2">
       <h1 className="text-4xl font-serif text-rose-900 tracking-wide">
         Jessica & Josh
@@ -73,7 +90,7 @@ const IntroScreen = ({ playerName, setPlayerName, setGameState }) => (
       </div>
 
       <button
-        onClick={() => playerName.trim() && setGameState('menu')}
+        onClick={() => playerName.trim() && setGameState("menu")}
         disabled={!playerName.trim()}
         className="w-full py-4 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-xl font-medium text-lg shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-1"
       >
@@ -84,17 +101,15 @@ const IntroScreen = ({ playerName, setPlayerName, setGameState }) => (
 );
 
 const GameCard = ({ title, icon, desc, color, onClick }) => (
-  <button 
+  <button
     onClick={onClick}
-    className={`relative overflow-hidden p-6 rounded-2xl text-left transition-all hover:scale-[1.02] active:scale-95 shadow-sm hover:shadow-md bg-white border border-gray-100 group`}
+    className="relative overflow-hidden p-6 rounded-2xl text-left transition-all hover:scale-[1.02] active:scale-95 shadow-sm hover:shadow-md bg-white border border-gray-100 group"
   >
-    <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity`}>
+    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
       {React.cloneElement(icon, { size: 64 })}
     </div>
     <div className="flex items-start gap-4 relative z-10">
-      <div className={`p-3 rounded-xl ${color}`}>
-        {icon}
-      </div>
+      <div className={`p-3 rounded-xl ${color}`}>{icon}</div>
       <div>
         <h3 className="font-bold text-gray-800 text-lg">{title}</h3>
         <p className="text-gray-500 text-sm">{desc}</p>
@@ -110,9 +125,10 @@ const MenuScreen = ({ playerName, setGameState, onStartGame }) => (
         <User className="w-5 h-5 text-rose-400" />
         <span className="font-medium text-rose-900">{playerName}</span>
       </div>
-      <button 
-        onClick={() => setGameState('leaderboard')}
+      <button
+        onClick={() => setGameState("leaderboard")}
         className="p-2 bg-white rounded-full shadow-sm text-rose-500 hover:text-rose-600"
+        aria-label="Open leaderboard"
       >
         <Trophy className="w-6 h-6" />
       </button>
@@ -123,32 +139,39 @@ const MenuScreen = ({ playerName, setGameState, onStartGame }) => (
     </h2>
 
     <div className="grid gap-4 w-full max-w-md">
-      <GameCard 
-        title="Who is most likely?" 
+      <GameCard
+        title="Who is most likely?"
         icon={<Heart className="w-6 h-6 text-rose-500" />}
         desc="Guess the couple's habits"
         color="bg-rose-100"
         onClick={() => onStartGame(1)}
       />
-      <GameCard 
-        title="Wedding Trivia" 
+      <GameCard
+        title="Wedding Trivia"
         icon={<Gem className="w-6 h-6 text-purple-500" />}
         desc="How well do you know them?"
         color="bg-purple-100"
         onClick={() => onStartGame(2)}
       />
-      <GameCard 
-        title="Scavenger Hunt" 
+      <GameCard
+        title="Scavenger Hunt"
         icon={<Camera className="w-6 h-6 text-emerald-500" />}
         desc="Find items at the venue"
         color="bg-emerald-100"
         onClick={() => onStartGame(3)}
       />
+      <GameCard
+        title="Honeymoon Slice"
+        icon={<Sparkles className="w-6 h-6 text-orange-500" />}
+        desc="Slice fruit to reveal the surprise"
+        color="bg-orange-100"
+        onClick={() => onStartGame(4)}
+      />
     </div>
   </div>
 );
 
-const TriviaGame = ({ onGameEnd }) => {
+const TriviaGame = ({ onSubmitScore, onGameEnd }) => {
   const [currentQ, setCurrentQ] = useState(0);
   const [localScore, setLocalScore] = useState(0);
   const [answered, setAnswered] = useState(false);
@@ -156,20 +179,20 @@ const TriviaGame = ({ onGameEnd }) => {
   const handleAnswer = (option) => {
     if (answered) return;
     setAnswered(true);
+
     const correct = option === WHO_IS_LIKELY_QUESTIONS[currentQ].answer;
-    
-    if (correct) {
-      setLocalScore(s => s + 100);
-    }
+    const nextScore = localScore + (correct ? 100 : 0);
+    if (correct) setLocalScore(nextScore);
 
     setTimeout(() => {
       if (currentQ < WHO_IS_LIKELY_QUESTIONS.length - 1) {
-        setCurrentQ(q => q + 1);
+        setCurrentQ((q) => q + 1);
         setAnswered(false);
       } else {
-        onGameEnd(localScore + (correct ? 100 : 0));
+        onSubmitScore?.(nextScore);
+        onGameEnd?.(nextScore);
       }
-    }, 1500);
+    }, 1200);
   };
 
   const q = WHO_IS_LIKELY_QUESTIONS[currentQ];
@@ -190,17 +213,18 @@ const TriviaGame = ({ onGameEnd }) => {
             onClick={() => handleAnswer(opt)}
             disabled={answered}
             className={`w-full p-4 rounded-xl text-lg font-medium transition-all transform ${
-              answered 
-                ? opt === q.answer 
-                  ? 'bg-green-500 text-white' 
-                  : 'bg-gray-200 text-gray-400'
-                : 'bg-white text-gray-700 shadow-sm hover:shadow-md hover:bg-rose-50 active:scale-95'
+              answered
+                ? opt === q.answer
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-200 text-gray-400"
+                : "bg-white text-gray-700 shadow-sm hover:shadow-md hover:bg-rose-50 active:scale-95"
             }`}
           >
             {opt}
           </button>
         ))}
       </div>
+
       <div className="mt-8 text-center text-rose-400 font-bold text-xl">
         Score: {localScore}
       </div>
@@ -212,10 +236,16 @@ const LeaderboardScreen = ({ playerName, setGameState }) => {
   const [leaderboardData, setLeaderboardData] = useState([]);
 
   useEffect(() => {
-    const q = query(collection(db, 'leaderboard'), orderBy('score', 'desc'), limit(10));
+    const q = query(
+      collection(db, "leaderboard"),
+      orderBy("score", "desc"),
+      limit(10)
+    );
+
     const unsub = onSnapshot(q, (snapshot) => {
-      setLeaderboardData(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLeaderboardData(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
+
     return () => unsub();
   }, []);
 
@@ -228,22 +258,28 @@ const LeaderboardScreen = ({ playerName, setGameState }) => {
 
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-rose-100">
         {leaderboardData.map((entry, idx) => (
-          <div 
-            key={entry.id} 
+          <div
+            key={entry.id}
             className={`flex items-center justify-between p-4 border-b border-gray-50 ${
-              idx === 0 ? 'bg-yellow-50' : ''
-            } ${entry.name === playerName ? 'bg-rose-50' : ''}`}
+              idx === 0 ? "bg-yellow-50" : ""
+            } ${entry.name === playerName ? "bg-rose-50" : ""}`}
           >
             <div className="flex items-center gap-4">
-              <span className={`w-8 h-8 flex items-center justify-center rounded-full font-bold ${
-                idx === 0 ? 'bg-yellow-400 text-white' : 
-                idx === 1 ? 'bg-gray-300 text-white' :
-                idx === 2 ? 'bg-amber-600 text-white' : 'text-gray-400'
-              }`}>
+              <span
+                className={`w-8 h-8 flex items-center justify-center rounded-full font-bold ${
+                  idx === 0
+                    ? "bg-yellow-400 text-white"
+                    : idx === 1
+                    ? "bg-gray-300 text-white"
+                    : idx === 2
+                    ? "bg-amber-600 text-white"
+                    : "text-gray-400"
+                }`}
+              >
                 {idx + 1}
               </span>
               <span className="font-medium text-gray-800">
-                {entry.name} {entry.name === playerName && '(You)'}
+                {entry.name} {entry.name === playerName && "(You)"}
               </span>
             </div>
             <span className="font-bold text-rose-500">{entry.score} pts</span>
@@ -251,8 +287,8 @@ const LeaderboardScreen = ({ playerName, setGameState }) => {
         ))}
       </div>
 
-      <button 
-        onClick={() => setGameState('menu')}
+      <button
+        onClick={() => setGameState("menu")}
         className="w-full mt-6 py-4 bg-white border-2 border-rose-500 text-rose-500 rounded-xl font-bold hover:bg-rose-50"
       >
         Back to Menu
@@ -264,8 +300,8 @@ const LeaderboardScreen = ({ playerName, setGameState }) => {
 // --- MAIN COMPONENT ---
 export default function WeddingGame() {
   const [user, setUser] = useState(null);
-  const [playerName, setPlayerName] = useState('');
-  const [gameState, setGameState] = useState('loading');
+  const [playerName, setPlayerName] = useState("");
+  const [gameState, setGameState] = useState("loading");
   const [score, setScore] = useState(0);
   const [selectedLevel, setSelectedLevel] = useState(null);
 
@@ -278,63 +314,125 @@ export default function WeddingGame() {
         console.error("Auth error:", err);
       }
     };
+
     initAuth();
+
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
-      if (u) {
-        setGameState(prev => prev === 'loading' ? 'intro' : prev);
-      }
+      if (u) setGameState((prev) => (prev === "loading" ? "intro" : prev));
     });
+
     return () => unsubscribe();
   }, []);
 
   const handleStartGame = (level) => {
     setSelectedLevel(level);
     setScore(0);
-    setGameState('playing');
+    setGameState("playing");
   };
 
-  const handleGameEnd = async (finalScore) => {
+  // Save score ONCE per round (used by all games)
+  const handleSubmitScore = async (finalScore) => {
     setScore(finalScore);
-    if (user && playerName) {
-      try {
-        await addDoc(collection(db, 'leaderboard'), {
-          name: playerName,
-          score: finalScore,
-          level: selectedLevel,
-          timestamp: serverTimestamp(),
-          uid: user.uid
-        });
-      } catch (error) {
-        console.error("Error saving score:", error);
-      }
+
+    if (!user || !playerName) return;
+
+    try {
+      await addDoc(collection(db, "leaderboard"), {
+        name: playerName,
+        score: finalScore,
+        level: selectedLevel,
+        timestamp: serverTimestamp(),
+        uid: user.uid,
+      });
+    } catch (error) {
+      console.error("Error saving score:", error);
     }
-    setGameState('leaderboard');
+  };
+
+  // Navigate only (prevents duplicate leaderboard writes)
+  const handleGameEnd = (finalScore) => {
+    setScore(finalScore);
+    setGameState("leaderboard");
   };
 
   // --- RENDER CONTROLLER ---
-  if (gameState === 'loading') return (
-    <div className="min-h-screen flex items-center justify-center bg-rose-50">
-      <Heart className="w-12 h-12 text-rose-400 animate-bounce" />
-      <p className="ml-4 text-rose-800 font-medium">Loading Love...</p>
-    </div>
-  );
+  if (gameState === "loading")
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-rose-50">
+        <Heart className="w-12 h-12 text-rose-400 animate-bounce" />
+        <p className="ml-4 text-rose-800 font-medium">Loading Love...</p>
+      </div>
+    );
 
-  if (gameState === 'intro') {
-    return <IntroScreen playerName={playerName} setPlayerName={setPlayerName} setGameState={setGameState} />;
+  if (gameState === "intro") {
+    return (
+      <IntroScreen
+        playerName={playerName}
+        setPlayerName={setPlayerName}
+        setGameState={setGameState}
+      />
+    );
   }
-  
-  if (gameState === 'menu') {
-    return <MenuScreen playerName={playerName} setGameState={setGameState} onStartGame={handleStartGame} />;
+
+  if (gameState === "menu") {
+    return (
+      <MenuScreen
+        playerName={playerName}
+        setGameState={setGameState}
+        onStartGame={handleStartGame}
+      />
+    );
   }
-  
-  if (gameState === 'leaderboard') {
+
+  if (gameState === "leaderboard") {
     return <LeaderboardScreen playerName={playerName} setGameState={setGameState} />;
   }
-  
-  if (selectedLevel === 1 && gameState === 'playing') {
-    return <TriviaGame onGameEnd={handleGameEnd} />;
+
+  // Level 1: Who is most likely?
+  if (selectedLevel === 1 && gameState === "playing") {
+    return (
+      <TriviaGame
+        onSubmitScore={handleSubmitScore}
+        onGameEnd={handleGameEnd}
+      />
+    );
   }
 
-  return <MenuScreen playerName={playerName} setGameState={setGameState} onStartGame={handleStartGame} />;
+  // Level 4: Fruit Slice
+  if (selectedLevel === 4 && gameState === "playing") {
+    return (
+      <FruitSliceGame
+        onSubmitScore={handleSubmitScore}
+        onGameEnd={handleGameEnd}
+      />
+    );
+  }
+
+  // Placeholder for unimplemented games (2 & 3)
+  if ((selectedLevel === 2 || selectedLevel === 3) && gameState === "playing") {
+    return (
+      <div className="min-h-screen bg-rose-50 p-6 flex flex-col items-center justify-center text-center">
+        <h2 className="text-2xl font-serif text-rose-900 mb-3">Coming soon</h2>
+        <p className="text-rose-700 mb-6">
+          This game is not wired up yet. Choose another challenge for now.
+        </p>
+        <button
+          onClick={() => setGameState("menu")}
+          className="px-6 py-3 bg-white border-2 border-rose-500 text-rose-600 rounded-xl font-bold hover:bg-rose-50"
+        >
+          Back to Menu
+        </button>
+      </div>
+    );
+  }
+
+  // Fallback
+  return (
+    <MenuScreen
+      playerName={playerName}
+      setGameState={setGameState}
+      onStartGame={handleStartGame}
+    />
+  );
 }
