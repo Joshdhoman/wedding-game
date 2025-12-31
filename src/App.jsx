@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import {
@@ -11,37 +11,10 @@ import {
   orderBy,
   limit,
 } from "firebase/firestore";
-import {
-  Heart,
-  Trophy,
-  Crown,
-  ArrowRight,
-  User,
-  Gem,
-  Camera,
-  Sparkles,
-} from "lucide-react";
+import { Heart, Trophy, Crown, ArrowRight, User, Sparkles } from "lucide-react";
 
 import FruitSliceGame from "./games/FruitSlice/FruitSliceGame";
-
-// --- CONFIGURATION ---
-const WHO_IS_LIKELY_QUESTIONS = [
-  {
-    question: "Who is more likely to cry during the ceremony?",
-    options: ["Jessica", "Josh", "Both", "Neither"],
-    answer: "Josh",
-  },
-  {
-    question: "Who takes longer to get ready?",
-    options: ["Jessica", "Josh"],
-    answer: "Jessica",
-  },
-  {
-    question: "Who said 'I love you' first?",
-    options: ["Jessica", "Josh"],
-    answer: "Josh",
-  },
-];
+import WeddingArcadeGame from "./games/WeddingArcade/WeddingArcadeGame";
 
 // --- FIREBASE SETUP ---
 const firebaseConfig = {
@@ -53,7 +26,6 @@ const firebaseConfig = {
   appId: "1:800410129800:web:180baa7eae03e4daab163d",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -68,9 +40,7 @@ const IntroScreen = ({ playerName, setPlayerName, setGameState }) => (
     </div>
 
     <div className="space-y-2">
-      <h1 className="text-4xl font-serif text-rose-900 tracking-wide">
-        Jessica & Josh
-      </h1>
+      <h1 className="text-4xl font-serif text-rose-900 tracking-wide">Jessica & Josh</h1>
       <p className="text-rose-600 font-light italic">The Wedding Game</p>
     </div>
 
@@ -125,6 +95,7 @@ const MenuScreen = ({ playerName, setGameState, onStartGame }) => (
         <User className="w-5 h-5 text-rose-400" />
         <span className="font-medium text-rose-900">{playerName}</span>
       </div>
+
       <button
         onClick={() => setGameState("leaderboard")}
         className="p-2 bg-white rounded-full shadow-sm text-rose-500 hover:text-rose-600"
@@ -140,26 +111,13 @@ const MenuScreen = ({ playerName, setGameState, onStartGame }) => (
 
     <div className="grid gap-4 w-full max-w-md">
       <GameCard
-        title="Who is most likely?"
-        icon={<Heart className="w-6 h-6 text-rose-500" />}
-        desc="Guess the couple's habits"
-        color="bg-rose-100"
-        onClick={() => onStartGame(1)}
+        title="Wedding Arcade"
+        icon={<Sparkles className="w-6 h-6 text-indigo-600" />}
+        desc="Pac-Man style: collect rings, avoid chaos"
+        color="bg-indigo-100"
+        onClick={() => onStartGame(5)}
       />
-      <GameCard
-        title="Wedding Trivia"
-        icon={<Gem className="w-6 h-6 text-purple-500" />}
-        desc="How well do you know them?"
-        color="bg-purple-100"
-        onClick={() => onStartGame(2)}
-      />
-      <GameCard
-        title="Scavenger Hunt"
-        icon={<Camera className="w-6 h-6 text-emerald-500" />}
-        desc="Find items at the venue"
-        color="bg-emerald-100"
-        onClick={() => onStartGame(3)}
-      />
+
       <GameCard
         title="Honeymoon Slice"
         icon={<Sparkles className="w-6 h-6 text-orange-500" />}
@@ -171,78 +129,17 @@ const MenuScreen = ({ playerName, setGameState, onStartGame }) => (
   </div>
 );
 
-const TriviaGame = ({ onSubmitScore, onGameEnd }) => {
-  const [currentQ, setCurrentQ] = useState(0);
-  const [localScore, setLocalScore] = useState(0);
-  const [answered, setAnswered] = useState(false);
-
-  const handleAnswer = (option) => {
-    if (answered) return;
-    setAnswered(true);
-
-    const correct = option === WHO_IS_LIKELY_QUESTIONS[currentQ].answer;
-    const nextScore = localScore + (correct ? 100 : 0);
-    if (correct) setLocalScore(nextScore);
-
-    setTimeout(() => {
-      if (currentQ < WHO_IS_LIKELY_QUESTIONS.length - 1) {
-        setCurrentQ((q) => q + 1);
-        setAnswered(false);
-      } else {
-        onSubmitScore?.(nextScore);
-        onGameEnd?.(nextScore);
-      }
-    }, 1200);
-  };
-
-  const q = WHO_IS_LIKELY_QUESTIONS[currentQ];
-
-  return (
-    <div className="min-h-screen bg-rose-50 p-6 flex flex-col justify-center">
-      <div className="text-center mb-8">
-        <span className="inline-block px-3 py-1 bg-rose-200 text-rose-800 rounded-full text-xs font-bold tracking-wider mb-2">
-          QUESTION {currentQ + 1}/{WHO_IS_LIKELY_QUESTIONS.length}
-        </span>
-        <h3 className="text-2xl font-bold text-gray-800">{q.question}</h3>
-      </div>
-
-      <div className="space-y-3">
-        {q.options.map((opt) => (
-          <button
-            key={opt}
-            onClick={() => handleAnswer(opt)}
-            disabled={answered}
-            className={`w-full p-4 rounded-xl text-lg font-medium transition-all transform ${
-              answered
-                ? opt === q.answer
-                  ? "bg-green-500 text-white"
-                  : "bg-gray-200 text-gray-400"
-                : "bg-white text-gray-700 shadow-sm hover:shadow-md hover:bg-rose-50 active:scale-95"
-            }`}
-          >
-            {opt}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-8 text-center text-rose-400 font-bold text-xl">
-        Score: {localScore}
-      </div>
-    </div>
-  );
-};
-
 const LeaderboardScreen = ({ playerName, setGameState }) => {
   const [leaderboardData, setLeaderboardData] = useState([]);
 
   useEffect(() => {
-    const q = query(
+    const qRef = query(
       collection(db, "leaderboard"),
       orderBy("score", "desc"),
       limit(10)
     );
 
-    const unsub = onSnapshot(q, (snapshot) => {
+    const unsub = onSnapshot(qRef, (snapshot) => {
       setLeaderboardData(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
 
@@ -302,7 +199,6 @@ export default function WeddingGame() {
   const [user, setUser] = useState(null);
   const [playerName, setPlayerName] = useState("");
   const [gameState, setGameState] = useState("loading");
-  const [score, setScore] = useState(0);
   const [selectedLevel, setSelectedLevel] = useState(null);
 
   // Auth Handling
@@ -327,14 +223,11 @@ export default function WeddingGame() {
 
   const handleStartGame = (level) => {
     setSelectedLevel(level);
-    setScore(0);
     setGameState("playing");
   };
 
   // Save score ONCE per round (used by all games)
   const handleSubmitScore = async (finalScore) => {
-    setScore(finalScore);
-
     if (!user || !playerName) return;
 
     try {
@@ -350,20 +243,19 @@ export default function WeddingGame() {
     }
   };
 
-  // Navigate only (prevents duplicate leaderboard writes)
-  const handleGameEnd = (finalScore) => {
-    setScore(finalScore);
+  const handleGameEnd = () => {
     setGameState("leaderboard");
   };
 
   // --- RENDER CONTROLLER ---
-  if (gameState === "loading")
+  if (gameState === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-rose-50">
         <Heart className="w-12 h-12 text-rose-400 animate-bounce" />
         <p className="ml-4 text-rose-800 font-medium">Loading Love...</p>
       </div>
     );
+  }
 
   if (gameState === "intro") {
     return (
@@ -389,10 +281,10 @@ export default function WeddingGame() {
     return <LeaderboardScreen playerName={playerName} setGameState={setGameState} />;
   }
 
-  // Level 1: Who is most likely?
-  if (selectedLevel === 1 && gameState === "playing") {
+  // Level 5: Wedding Arcade
+  if (selectedLevel === 5 && gameState === "playing") {
     return (
-      <TriviaGame
+      <WeddingArcadeGame
         onSubmitScore={handleSubmitScore}
         onGameEnd={handleGameEnd}
       />
@@ -406,24 +298,6 @@ export default function WeddingGame() {
         onSubmitScore={handleSubmitScore}
         onGameEnd={handleGameEnd}
       />
-    );
-  }
-
-  // Placeholder for unimplemented games (2 & 3)
-  if ((selectedLevel === 2 || selectedLevel === 3) && gameState === "playing") {
-    return (
-      <div className="min-h-screen bg-rose-50 p-6 flex flex-col items-center justify-center text-center">
-        <h2 className="text-2xl font-serif text-rose-900 mb-3">Coming soon</h2>
-        <p className="text-rose-700 mb-6">
-          This game is not wired up yet. Choose another challenge for now.
-        </p>
-        <button
-          onClick={() => setGameState("menu")}
-          className="px-6 py-3 bg-white border-2 border-rose-500 text-rose-600 rounded-xl font-bold hover:bg-rose-50"
-        >
-          Back to Menu
-        </button>
-      </div>
     );
   }
 
